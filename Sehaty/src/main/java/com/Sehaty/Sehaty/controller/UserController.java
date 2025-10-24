@@ -49,10 +49,10 @@ public class UserController {
      * Update user information
      * PUT /api/users/{userId}
      */
-    @PutMapping("/{userId}")
+    @PatchMapping("/update/{userId}")
     public ResponseEntity<ApiResponse> updateUser(
             @PathVariable UUID userId,
-            @Valid @RequestBody UpdateUserDTO updateUserDTO) {
+             @RequestBody UpdateUserDTO updateUserDTO) {
         UserResponseDTO user = userService.updateUser(userId, updateUserDTO);
         return ResponseEntity.ok(
                 new ApiResponse(true, "تم تحديث البيانات بنجاح", user)

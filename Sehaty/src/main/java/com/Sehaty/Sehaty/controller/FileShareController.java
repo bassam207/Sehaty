@@ -1,5 +1,6 @@
 package com.Sehaty.Sehaty.controller;
 
+import com.Sehaty.Sehaty.dto.MedicalFileResponseDTO;
 import com.Sehaty.Sehaty.dto.SharedRecordDTO;
 import com.Sehaty.Sehaty.service.FileShareService;
 import com.Sehaty.Sehaty.shared.ApiResponse;
@@ -34,6 +35,15 @@ public class FileShareController {
                 .body(new ApiResponse(true, "تم إنشاء جلسة المشاركة بنجاح", sharedRecord));
     }
 
+    @GetMapping("/by-qr")
+    public ResponseEntity<ApiResponse> getFilesByQr(@RequestParam String qrCode) {
+        List<MedicalFileResponseDTO> files = fileShareService.getFilesByQrCode(qrCode);
+
+        return ResponseEntity.ok(
+                new ApiResponse(true, "تم إرجاع الملفات المرتبطة بـ QR code بنجاح", files)
+        );
+    }
+
     /**
      * Access share session by QR code
      * GET /api/share/access/{qrCode}
@@ -52,7 +62,7 @@ public class FileShareController {
      * Revoke share session
      * PUT /api/share/{shareId}/revoke
      */
-    @PutMapping("/{shareId}/revoke")
+    @PutMapping("/revoke/{shareId}")
     public ResponseEntity<ApiResponse> revokeShare(
             @PathVariable UUID shareId,
             @RequestParam UUID userId) {

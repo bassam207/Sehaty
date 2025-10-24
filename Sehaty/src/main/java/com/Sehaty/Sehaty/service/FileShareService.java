@@ -4,6 +4,7 @@ import com.Sehaty.Sehaty.dto.MedicalFileResponseDTO;
 import com.Sehaty.Sehaty.dto.SharedRecordDTO;
 import com.Sehaty.Sehaty.exception.QRCodeGenerationException;
 import com.Sehaty.Sehaty.exception.ResourceNotFoundException;
+import com.Sehaty.Sehaty.mapper.MedicalFileMapper;
 import com.Sehaty.Sehaty.mapper.ShareRecordMapper;
 import com.Sehaty.Sehaty.model.MedicalFile;
 import com.Sehaty.Sehaty.model.SharedRecords;
@@ -39,6 +40,7 @@ public class FileShareService {
     private final SharedRecordRepository sharedRecordRepository;
     private  final  FileUploadService fileUploadService;
     private final ShareRecordMapper shareRecordMapper;
+    private final MedicalFileMapper medicalFileMapper;
 
     private static final int QR_CODE_SIZE = 250;
     private static final int SHARE_EXPIRY_HOURS = 1;
@@ -65,12 +67,28 @@ public class FileShareService {
         String qrCode = UUID.randomUUID().toString();
 
         SharedRecords sharedRecords = createSharedRecord(user, files, qrCode);
+
         SharedRecords savedShare = sharedRecordRepository.save(sharedRecords);
 
         String qrUrl = generateAndUploadQRCode(qrCode, savedShare);
 
-        return buildSharedRecordDTO(savedShare, files, qrUrl);
+       SharedRecordDTO shareDTO = shareRecordMapper.toDTO(savedShare);
+        shareDTO.setUserName(user.getName());
+        shareDTO.setQrUrl(qrUrl);
+      return   shareDTO;
     }
+
+    public List<MedicalFileResponseDTO> getFilesByQrCode(String qrCode) {
+        SharedRecords sharedRecord = sharedRecordRepository.findByQrCode(qrCode)
+                .orElseThrow(() -> new QRCodeGenerationException("QR code غير صالح أو غير موجود"));
+
+        // هنا بترجع الملفات اللي كانت ضمن الجلسة دي
+        return sharedRecord.getSharedFiles()
+                .stream()
+                .map(medicalFileMapper::toMedicalFileResponseDTO)
+                .toList();
+    }
+
 
     /**
      * Access share session by QR code
@@ -147,8 +165,12 @@ public class FileShareService {
 
     private String generateAndUploadQRCode(String qrCode, SharedRecords savedShare) {
         try {
+
+            String baseUrl = "http://localhost:8089/api/share/by-qr?qrCode=";
+            String qrContent = baseUrl + qrCode;
+
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
-            BitMatrix bitMatrix = qrCodeWriter.encode(qrCode, BarcodeFormat.QR_CODE, QR_CODE_SIZE, QR_CODE_SIZE);
+            BitMatrix bitMatrix = qrCodeWriter.encode(qrContent, BarcodeFormat.QR_CODE, QR_CODE_SIZE, QR_CODE_SIZE);
 
             ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
@@ -169,10 +191,10 @@ public class FileShareService {
             return qrUrl;
 
         } catch (Exception e) {
-
-            throw new QRCodeGenerationException("فشل انشاء رمز المشاركة");
+            throw new QRCodeGenerationException("فشل إنشاء رمز المشاركة");
         }
     }
+
 
     private SharedRecordDTO buildSharedRecordDTO(SharedRecords share, List<MedicalFile> files, String qrUrl) {
         SharedRecordDTO dto = new SharedRecordDTO();

@@ -17,7 +17,9 @@ public class SecurityConfig {
         http.csrf().disable()
                 .authorizeHttpRequests()
                 .requestMatchers(
-                        "api/users/register"
+                        "api/users/register","api/users/login","api/users/update/**","api/users/{userId}",
+                        "api/medical-files/upload/**","api/medical-files/user/**","api/medical-files/{fileId}",
+                        "api/share/create/**","api/share/by-qr/**","api/share/revoke/**","api/share/access/**"
                 ).permitAll()
                 .anyRequest().authenticated();
         return http.build();

@@ -21,9 +21,9 @@ public class MedicalFileController {
 
     private final MedicalFileService medicalFileService;
 
-    @PostMapping("/upload")
+    @PostMapping("/upload/{userId}")
     public ResponseEntity<ApiResponse> uploadFile(
-            @RequestParam("userId") UUID userId,
+            @PathVariable UUID userId,
             @RequestParam("file") MultipartFile file,
             @Valid @ModelAttribute MedicalFileUploadRequestDTO requestDTO) {
 

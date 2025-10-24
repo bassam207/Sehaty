@@ -100,7 +100,7 @@ public class UserService {
             user.setName(updateUserDTO.getName());
         }
 
-        if (updateUserDTO.getEmail() != null && !updateUserDTO.getEmail().equals(user.getEmail()))
+        if (updateUserDTO.getEmail() != null && !updateUserDTO.getEmail().isBlank())
         {
             if(userRepository.existsByEmail(updateUserDTO.getEmail()))
             {

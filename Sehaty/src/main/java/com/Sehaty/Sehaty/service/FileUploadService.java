@@ -24,10 +24,13 @@ public class FileUploadService {
             throw new BadRequestException("File cannot be empty");
         }
 
-        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap
+      /**  Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap
                 (
                         "resource_type","auto"
-                ));
+                ));*/
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+        System.out.println(uploadResult);
+
 
         return uploadResult.get("secure_url").toString();
     }
