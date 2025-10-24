@@ -16,8 +16,8 @@ public class MedicalFileMapper {
                 file.getFileName(),
                 file.getCategory(),
                 file.getSubCategory(),
-                file.getUrl(),
-                file.getUploadedAt()
+                file.getUrl()
+
         );
     }
 

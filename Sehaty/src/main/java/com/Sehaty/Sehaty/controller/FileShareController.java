@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -71,6 +72,16 @@ public class FileShareController {
 
         return ResponseEntity.ok(
                 new ApiResponse(true, "تم إنهاء جلسة المشاركة بنجاح", sharedRecord)
+        );
+    }
+
+    @GetMapping("/sessions/{userId}")
+    public ResponseEntity<ApiResponse> getUserSessions(@PathVariable UUID userId) {
+        Map<String, List<SharedRecordDTO>> sessions =
+                fileShareService.getUserSessions(userId);
+
+        return ResponseEntity.ok(
+                new ApiResponse(true, "تم جلب الجلسات بنجاح", sessions)
         );
     }
 }

@@ -18,15 +18,8 @@ public class MedicalFileResponseDTO {
     private String category;
     private String subCategory;
     private String url;
-    private LocalDateTime uploadDate;
 
-    public MedicalFileResponseDTO(UUID id , String category, String subCategory , String fileName ,String url)
-    {
-        this.id = id;
-        this.category  = category;
-        this.subCategory = subCategory;
-        this.fileName = fileName;
-        this.url = url;
-    }
+
+
 
 }

@@ -36,7 +36,8 @@ public class SharedRecords {
      */
     private String qrCode;
 
-    private String qrUrl;
+    private String qrData;
+
 
     /** Timestamp when the sharing was initiated. */
     private LocalDateTime sharedAt = LocalDateTime.now();

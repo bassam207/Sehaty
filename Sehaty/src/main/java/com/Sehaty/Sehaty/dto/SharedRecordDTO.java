@@ -20,10 +20,11 @@ public class SharedRecordDTO {
 
     private UUID id;
     private String qrCode;
-    private String qrUrl;
+    private String qrData;
     private String userName;
     private LocalDateTime sharedAt;
     private LocalDateTime expiresAt;
+    private long timeRemaining;
     private SharedRecords.ShareStatus status;
     private List<MedicalFileResponseDTO> sharedFiles;
 }

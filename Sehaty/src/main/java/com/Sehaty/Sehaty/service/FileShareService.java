@@ -26,7 +26,9 @@ import com.Sehaty.Sehaty.exception.BadRequestException;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,7 +45,8 @@ public class FileShareService {
     private final MedicalFileMapper medicalFileMapper;
 
     private static final int QR_CODE_SIZE = 250;
-    private static final int SHARE_EXPIRY_HOURS = 1;
+    private static final int SHARE_EXPIRY_Minutes = 15;
+    private static final String BASE_URL = "http://localhost:8089";
 
     /**
      * Create share session
@@ -70,11 +73,17 @@ public class FileShareService {
 
         SharedRecords savedShare = sharedRecordRepository.save(sharedRecords);
 
-        String qrUrl = generateAndUploadQRCode(qrCode, savedShare);
+
 
        SharedRecordDTO shareDTO = shareRecordMapper.toDTO(savedShare);
+
         shareDTO.setUserName(user.getName());
-        shareDTO.setQrUrl(qrUrl);
+
+        String qrData = BASE_URL + "/api/share/by-qr?qrCode=" + qrCode;
+        shareDTO.setQrData(qrData);
+
+
+
       return   shareDTO;
     }
 
@@ -110,7 +119,15 @@ public class FileShareService {
             throw new BadRequestException("صلاحية المشاركة انتهت");
         }
 
-        return shareRecordMapper.toDTO(share);
+          SharedRecordDTO dto = shareRecordMapper.toDTO(share);
+        dto.setUserName(share.getUser().getName());
+
+
+
+        String qrData = BASE_URL + "/api/share/by-qr?qrCode=" + qrCode;
+        dto.setQrData(qrData);
+        return dto;
+
     }
 
     /**
@@ -138,6 +155,28 @@ public class FileShareService {
         return shareRecordMapper.toDTO(revokedShare);
     }
 
+
+    public Map<String, List<SharedRecordDTO>> getUserSessions(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("المستخدم غير موجود"));
+
+        List<SharedRecords> allSessions = sharedRecordRepository.findByUser(user);
+
+        List<SharedRecordDTO> active = allSessions.stream()
+                .filter(s -> s.getStatus() == SharedRecords.ShareStatus.ACTIVE)
+                .filter(s -> s.getExpiresAt().isAfter(LocalDateTime.now()))
+                .map(shareRecordMapper::toDTO)
+                .toList();
+
+        List<SharedRecordDTO> expired = allSessions.stream()
+                .filter(s -> s.getStatus() != SharedRecords.ShareStatus.ACTIVE ||
+                        s.getExpiresAt().isBefore(LocalDateTime.now()))
+                .map(shareRecordMapper::toDTO)
+                .toList();
+
+        return Map.of("active", active, "expired", expired);
+    }
+
     // ==================== Helper Methods ====================
 
     private void validateFilesOwnership(List<MedicalFile> files, UUID userId) {
@@ -157,50 +196,19 @@ public class FileShareService {
         sharedRecords.setSharedFiles(files);
         sharedRecords.setQrCode(qrCode);
         sharedRecords.setSharedAt(now);
-        sharedRecords.setExpiresAt(now.plusHours(SHARE_EXPIRY_HOURS));
+        sharedRecords.setExpiresAt(now.plusMinutes(SHARE_EXPIRY_Minutes));
         sharedRecords.setStatus(SharedRecords.ShareStatus.ACTIVE);
 
         return sharedRecords;
     }
 
-    private String generateAndUploadQRCode(String qrCode, SharedRecords savedShare) {
-        try {
 
-            String baseUrl = "http://localhost:8089/api/share/by-qr?qrCode=";
-            String qrContent = baseUrl + qrCode;
-
-            QRCodeWriter qrCodeWriter = new QRCodeWriter();
-            BitMatrix bitMatrix = qrCodeWriter.encode(qrContent, BarcodeFormat.QR_CODE, QR_CODE_SIZE, QR_CODE_SIZE);
-
-            ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();
-            MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
-            byte[] qrImageBytes = pngOutputStream.toByteArray();
-
-            MultipartFile qrFile = new MockMultipartFile(
-                    "file",
-                    qrCode + ".png",
-                    "image/png",
-                    qrImageBytes
-            );
-
-            String qrUrl = fileUploadService.uploadFile(qrFile);
-
-            savedShare.setQrUrl(qrUrl);
-            sharedRecordRepository.save(savedShare);
-
-            return qrUrl;
-
-        } catch (Exception e) {
-            throw new QRCodeGenerationException("فشل إنشاء رمز المشاركة");
-        }
-    }
 
 
     private SharedRecordDTO buildSharedRecordDTO(SharedRecords share, List<MedicalFile> files, String qrUrl) {
         SharedRecordDTO dto = new SharedRecordDTO();
         dto.setId(share.getId());
         dto.setQrCode(share.getQrCode());
-        dto.setQrUrl(qrUrl);
         dto.setSharedAt(share.getSharedAt());
         dto.setExpiresAt(share.getExpiresAt());
         dto.setStatus(share.getStatus());
