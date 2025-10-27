@@ -26,6 +26,7 @@ public class ShareRecordMapper {
                 savedShare.getExpiresAt()
         );
         responseDTO.setTimeRemaining(Math.max(0, timeRemaining));
+
         responseDTO.setStatus(savedShare.getStatus());
 
 
@@ -33,7 +34,7 @@ public class ShareRecordMapper {
              file -> {
                  MedicalFileResponseDTO fileResponseDTO = new MedicalFileResponseDTO();
                  fileResponseDTO.setId(file.getId());
-                 fileResponseDTO.setCategory(file.getCategory());
+                 fileResponseDTO.setCategory(file.getCategory() != null ? file.getCategory().getArabicName() : null);
                  fileResponseDTO.setSubCategory(file.getSubCategory());
                  fileResponseDTO.setFileName(file.getFileName());
                  fileResponseDTO.setUrl(file.getUrl());

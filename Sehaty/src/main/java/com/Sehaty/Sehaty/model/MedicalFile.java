@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Value;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -42,7 +43,8 @@ public class MedicalFile {
     /**
      * General medical category, e.g. "Radiology", "Lab Test", "Prescription".
      */
-    private String category;
+    @Enumerated(EnumType.STRING)
+    private  FileCategory category;
 
     /**
      * Specific subcategory, e.g. "CT", "MRI", "Blood", "Urine".
@@ -74,14 +76,47 @@ public class MedicalFile {
 
     private String StorageProvider  = " CLOUDINARY";
 
-    public MedicalFile(String fileName, String category , String subCategory)
+    public enum FileCategory {
+        RADIOLOGY("أشعة", Map.of(
+                "X-RAY", "أشعة عادية",
+                "CT", "أشعة مقطعية",
+                "MRI", "رنين مغناطيسي",
+                "ULTRASOUND", "سونار"
+        )),
+        LABS("تحاليل", Map.of(
+                "CBC", "صورة دم كاملة",
+                "LFT", "وظائف كبد",
+                "RFT", "وظائف كلى",
+                "BLOOD_SUGAR", "سكر بالدم"
+        )),
+        REPORTS("تقارير و روشتات", Map.of(
+                "MEDICAL_REPORT", "تقرير طبي",
+                "PRESCRIPTION", "روشتة",
+                "FOLLOW_UP", "متابعة"
+        ));
+
+        private final String arabicName;
+        private final Map<String, String> subcategories;
+
+        FileCategory(String arabicName, Map<String, String> subcategories) {
+            this.arabicName = arabicName;
+            this.subcategories = subcategories;
+        }
+
+        public String getArabicName() { return arabicName; }
+        public Map<String, String> getSubcategories() { return subcategories; }
+    }
+
+
+
+    public MedicalFile(String fileName, FileCategory category , String subCategory)
     {
         this.fileName = fileName;
         this.category = category;
         this.subCategory = subCategory;
     }
 
-    public MedicalFile( String category , String subCategory)
+    public MedicalFile( FileCategory category , String subCategory)
     {
 
         this.category = category;

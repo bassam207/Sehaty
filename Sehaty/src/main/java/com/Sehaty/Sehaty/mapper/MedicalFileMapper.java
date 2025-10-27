@@ -12,9 +12,9 @@ public class MedicalFileMapper {
     public MedicalFileResponseDTO toMedicalFileResponseDTO(MedicalFile file)
     {
         return new MedicalFileResponseDTO(
-               file.getId(),
+                file.getId(),
                 file.getFileName(),
-                file.getCategory(),
+                file.getCategory().getArabicName(),
                 file.getSubCategory(),
                 file.getUrl()
 
@@ -23,10 +23,7 @@ public class MedicalFileMapper {
 
     public MedicalFile toMedicalFile(MedicalFileUploadRequestDTO requestDTO)
     {
-        return new MedicalFile(
-
-                requestDTO.getCategory(),
-                requestDTO.getSubCategory()
-        );
+        MedicalFile.FileCategory categoryEnum = MedicalFile.FileCategory.fromArabic(requestDTO.getCategory());
+        return new MedicalFile(categoryEnum, requestDTO.getSubCategory());
     }
 }

@@ -67,4 +67,28 @@ public class MedicalFileController {
                 new ApiResponse(true, "تم حذف الملف بنجاح")
         );
     }
+
+    @GetMapping("/categories/{category}/subcategories")
+    public ResponseEntity<ApiResponse> getSubcategoriesByCategory(@PathVariable String category) {
+        List<String> subcategories;
+
+        switch (category.toUpperCase()) {
+            case "RADIOLOGY":
+                subcategories = List.of("أشعة سينية", "أشعة مقطعية", "رنين مغناطيسي", "أشعة تليفزيونية");
+                break;
+            case "LABS":
+                subcategories = List.of("تحليل دم", "تحليل بول", "تحليل سكر", "تحليل وظائف كبد");
+                break;
+            case "REPORTS":
+                subcategories = List.of("روشتة", "تقرير طبي", "نتائج متابعة");
+                break;
+            default:
+                subcategories = List.of("أخرى");
+        }
+
+        return ResponseEntity.ok(
+                new ApiResponse(true, "تم إرجاع أنواع الملفات الفرعية بنجاح", subcategories)
+        );
+    }
+
 }

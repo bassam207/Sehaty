@@ -44,7 +44,7 @@ public class FileShareService {
     private final ShareRecordMapper shareRecordMapper;
     private final MedicalFileMapper medicalFileMapper;
 
-    private static final int QR_CODE_SIZE = 250;
+
     private static final int SHARE_EXPIRY_Minutes = 15;
     private static final String BASE_URL = "http://localhost:8089";
 
@@ -70,16 +70,20 @@ public class FileShareService {
         String qrCode = UUID.randomUUID().toString();
 
         SharedRecords sharedRecords = createSharedRecord(user, files, qrCode);
-
         SharedRecords savedShare = sharedRecordRepository.save(sharedRecords);
+        String qrData = BASE_URL + "/api/share/by-qr?qrCode=" + qrCode;
+        sharedRecords.setQrData(qrData);
+
+        savedShare = sharedRecordRepository.save(savedShare);
 
 
 
        SharedRecordDTO shareDTO = shareRecordMapper.toDTO(savedShare);
 
         shareDTO.setUserName(user.getName());
+        shareDTO.setQrData(qrData);
 
-        String qrData = BASE_URL + "/api/share/by-qr?qrCode=" + qrCode;
+
         shareDTO.setQrData(qrData);
 
 
@@ -124,7 +128,7 @@ public class FileShareService {
 
 
 
-        String qrData = BASE_URL + "/api/share/by-qr?qrCode=" + qrCode;
+        String qrData = BASE_URL + "share/by-qr?qrCode=" + qrCode;
         dto.setQrData(qrData);
         return dto;
 
