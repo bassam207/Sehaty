@@ -219,9 +219,9 @@ public class FileShareService {
         dto.setSharedFiles(files.stream()
                 .map(f -> new MedicalFileResponseDTO(
                         f.getId(),
-                        f.getCategory(),
-                        f.getSubCategory(),
                         f.getFileName(),
+                        f.getCategory() != null ? f.getCategory().getArabicName() : null,
+                        f.getSubCategory(),
                         f.getUrl()
                 ))
                 .toList());

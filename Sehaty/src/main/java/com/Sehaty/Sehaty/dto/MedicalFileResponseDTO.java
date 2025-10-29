@@ -1,5 +1,6 @@
 package com.Sehaty.Sehaty.dto;
 
+import com.Sehaty.Sehaty.model.MedicalFile;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,8 +15,9 @@ import java.util.UUID;
 public class MedicalFileResponseDTO {
 
     private UUID id ;
-    private String fileName;
-    private String category;
+    private String displayName;
+
+    private String  category;
     private String subCategory;
     private String url;
 

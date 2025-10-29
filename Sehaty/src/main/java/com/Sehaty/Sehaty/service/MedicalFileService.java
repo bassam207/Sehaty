@@ -13,6 +13,7 @@ import com.Sehaty.Sehaty.model.MedicalFile;
 import com.Sehaty.Sehaty.model.User;
 import com.Sehaty.Sehaty.repository.MedicalFileRepository;
 import com.Sehaty.Sehaty.repository.UserRepository;
+import com.Sehaty.Sehaty.shared.FileCategory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,21 +47,32 @@ public class MedicalFileService {
      */
     public MedicalFileResponseDTO uploadFile(UUID userId, MultipartFile file, MedicalFileUploadRequestDTO requestDTO) {
 
+        // ✅ 1. التحقق من المستخدم
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("المستخدم غير موجود"));
 
-
+        // ✅ 2. الحد الأقصى لعدد الملفات
         long fileCount = medicalFileRepository.countByOwner(user);
         if (fileCount >= MAX_FILES_PER_USER) {
             throw new BadRequestException("وصلت الحد الأقصى لعدد الملفات المسموح به (8 ملفات)");
         }
 
-        // 1. Validate file is not empty
+        // ✅ 3. التحقق من وجود الفئة
+        if (requestDTO.getCategory() == null || requestDTO.getCategory().isBlank()) {
+            throw new BadRequestException("يجب تحديد فئة الملف");
+        }
+
+        // ✅ 4. التحقق من وجود نوع فرعي
+        if (requestDTO.getSubCategory() == null || requestDTO.getSubCategory().isBlank()) {
+            throw new BadRequestException("يجب تحديد نوع الملف الفرعي (مثل نوع الأشعة أو التحليل)");
+        }
+
+        // ✅ 5. التحقق من الملف نفسه
         if (file.isEmpty()) {
             throw new BadRequestException("الملف فارغ");
         }
 
-        // 3. Validate file extension
+        // ✅ 6. التحقق من الامتداد
         String originalFilename = file.getOriginalFilename();
         String extension = getFileExtension(originalFilename);
 
@@ -69,26 +81,49 @@ public class MedicalFileService {
                     String.join(", ", ALLOWED_EXTENSIONS));
         }
 
-        // 4. Generate unique filename
+        // ✅ 7. توليد اسم ملف فريد
         String uniqueFilename = generateUniqueFilename(originalFilename);
 
+        // ✅ 8. رفع الملف إلى Cloudinary
         String fileUrl;
         try {
             fileUrl = fileUploadService.uploadFile(file);
         } catch (IOException e) {
-
             throw new FileStorageException("فشل رفع الملف", e);
         }
 
-        MedicalFile medicalFile = medicalFileMapper.toMedicalFile(requestDTO);
+        // ✅ 9. تحويل الفئة من النص إلى Enum (يدعم العربي والإنجليزي)
+        FileCategory categoryEnum = FileCategory.fromArabic(requestDTO.getCategory())
+                .orElseGet(() -> {
+                    try {
+                        return FileCategory.valueOf(requestDTO.getCategory().toUpperCase());
+                    } catch (Exception e) {
+                        throw new BadRequestException("الفئة غير معروفة: " + requestDTO.getCategory());
+                    }
+                });
+
+        // ✅ 10. إنشاء كائن الملف
+        MedicalFile medicalFile = new MedicalFile();
+        medicalFile.setCategory(categoryEnum);
         medicalFile.setFileName(uniqueFilename);
         medicalFile.setFileType(extension);
         medicalFile.setOwner(user);
         medicalFile.setUrl(fileUrl);
         medicalFile.setUploadedAt(LocalDateTime.now());
 
+        // ✅ 11. تحديد النوع الفرعي بناءً على الفئة المختارة
+        String subKey = categoryEnum.resolveSubcategoryKey(requestDTO.getSubCategory());
+        medicalFile.setSubCategory(subKey);
+
+        if (requestDTO.getDisplayName() == null || requestDTO.getDisplayName().isBlank()) {
+            throw new BadRequestException("يجب إدخال اسم الملف (مثل أشعة مقطعية على الصدر)");
+        }
+        medicalFile.setDisplayName(requestDTO.getDisplayName().trim());
+
+        // ✅ 12. حفظ الملف
         MedicalFile savedFile = medicalFileRepository.save(medicalFile);
 
+        // ✅ 13. إرجاع النتيجة
         return medicalFileMapper.toMedicalFileResponseDTO(savedFile);
     }
 

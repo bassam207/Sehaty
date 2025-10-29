@@ -36,7 +36,7 @@ public class ShareRecordMapper {
                  fileResponseDTO.setId(file.getId());
                  fileResponseDTO.setCategory(file.getCategory() != null ? file.getCategory().getArabicName() : null);
                  fileResponseDTO.setSubCategory(file.getSubCategory());
-                 fileResponseDTO.setFileName(file.getFileName());
+                 fileResponseDTO.setDisplayName(file.getFileName());
                  fileResponseDTO.setUrl(file.getUrl());
 
                  return fileResponseDTO;

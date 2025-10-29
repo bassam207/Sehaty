@@ -1,5 +1,6 @@
 package com.Sehaty.Sehaty.model;
 
+import com.Sehaty.Sehaty.shared.FileCategory;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -40,6 +41,9 @@ public class MedicalFile {
      */
     private String fileType;
 
+    private String displayName;
+
+
     /**
      * General medical category, e.g. "Radiology", "Lab Test", "Prescription".
      */
@@ -76,36 +80,7 @@ public class MedicalFile {
 
     private String StorageProvider  = " CLOUDINARY";
 
-    public enum FileCategory {
-        RADIOLOGY("أشعة", Map.of(
-                "X-RAY", "أشعة عادية",
-                "CT", "أشعة مقطعية",
-                "MRI", "رنين مغناطيسي",
-                "ULTRASOUND", "سونار"
-        )),
-        LABS("تحاليل", Map.of(
-                "CBC", "صورة دم كاملة",
-                "LFT", "وظائف كبد",
-                "RFT", "وظائف كلى",
-                "BLOOD_SUGAR", "سكر بالدم"
-        )),
-        REPORTS("تقارير و روشتات", Map.of(
-                "MEDICAL_REPORT", "تقرير طبي",
-                "PRESCRIPTION", "روشتة",
-                "FOLLOW_UP", "متابعة"
-        ));
 
-        private final String arabicName;
-        private final Map<String, String> subcategories;
-
-        FileCategory(String arabicName, Map<String, String> subcategories) {
-            this.arabicName = arabicName;
-            this.subcategories = subcategories;
-        }
-
-        public String getArabicName() { return arabicName; }
-        public Map<String, String> getSubcategories() { return subcategories; }
-    }
 
 
 

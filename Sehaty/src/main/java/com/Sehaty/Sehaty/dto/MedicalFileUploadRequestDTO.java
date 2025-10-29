@@ -1,6 +1,7 @@
 package com.Sehaty.Sehaty.dto;
 
 
+import com.Sehaty.Sehaty.model.MedicalFile;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,7 +15,8 @@ import java.time.LocalDateTime;
 public class MedicalFileUploadRequestDTO {
 
     private MultipartFile file;
-    private String fileName;
+    private String displayName;
+
     private String category;
     private String subCategory;
 
