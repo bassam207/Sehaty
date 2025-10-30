@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -21,53 +22,30 @@ public class UserController {
 
     private final UserService userService;
 
-    /**
-     * Register a new user
-     * POST /api/users/register
-     */
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse> register(@Valid @RequestBody UserRequestDTO request) {
-        UserResponseDTO user = userService.register(request);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new ApiResponse(true, "تم التسجيل بنجاح", user));
-    }
+
 
     /**
-     * Login user
-     * POST /api/users/login
+     * Get current authenticated user (using JWT)
      */
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse> login(@Valid @RequestBody LoginDTO loginDTO) {
-        UserResponseDTO user = userService.loginUser(loginDTO);
-        return ResponseEntity.ok(
-                new ApiResponse(true, "تم تسجيل الدخول بنجاح", user)
-        );
-    }
-
-    /**
-     * Update user information
-     * PUT /api/users/{userId}
-     */
-    @PatchMapping("/update/{userId}")
-    public ResponseEntity<ApiResponse> updateUser(
-            @PathVariable UUID userId,
-             @RequestBody UpdateUserDTO updateUserDTO) {
-        UserResponseDTO user = userService.updateUser(userId, updateUserDTO);
-        return ResponseEntity.ok(
-                new ApiResponse(true, "تم تحديث البيانات بنجاح", user)
-        );
-    }
-
-    /**
-     * Get current user information
-     * GET /api/users/{userId}
-     */
-    @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse> getCurrentUser(@PathVariable UUID userId) {
-        UserResponseDTO user = userService.getCurrentUser(userId);
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse> getCurrentUser(Authentication authentication) {
+        UserResponseDTO user = userService.getCurrentUser(authentication);
         return ResponseEntity.ok(
                 new ApiResponse(true, "تم جلب بيانات المستخدم بنجاح", user)
+        );
+    }
+
+    /**
+     * Update current authenticated user (using JWT)
+     */
+    @PatchMapping("/update")
+    public ResponseEntity<ApiResponse> updateUser(
+            Authentication authentication,
+            @RequestBody UpdateUserDTO updateUserDTO) {
+
+        UserResponseDTO user = userService.updateUser(authentication, updateUserDTO);
+        return ResponseEntity.ok(
+                new ApiResponse(true, "تم تحديث البيانات بنجاح", user)
         );
     }
 }

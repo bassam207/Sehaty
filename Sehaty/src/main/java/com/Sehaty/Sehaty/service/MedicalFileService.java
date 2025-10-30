@@ -15,6 +15,7 @@ import com.Sehaty.Sehaty.repository.MedicalFileRepository;
 import com.Sehaty.Sehaty.repository.UserRepository;
 import com.Sehaty.Sehaty.shared.FileCategory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,7 +35,7 @@ public class MedicalFileService {
     private final FileUploadService fileUploadService;
     private final MedicalFileMapper medicalFileMapper;
 
-    private static final int MAX_FILES_PER_USER = 8;
+    private static final int MAX_FILES_PER_USER = 10;
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
             "pdf", "jpg", "jpeg", "png", "doc", "docx"
     );
@@ -45,54 +46,50 @@ public class MedicalFileService {
      * @param requestDTO Upload request data
      * @return MedicalFileResponseDTO
      */
-    public MedicalFileResponseDTO uploadFile(UUID userId, MultipartFile file, MedicalFileUploadRequestDTO requestDTO) {
+    public MedicalFileResponseDTO uploadFile(UserDetails userDetails, MultipartFile file, MedicalFileUploadRequestDTO requestDTO) {
 
-        // ✅ 1. التحقق من المستخدم
-        User user = userRepository.findById(userId)
+        // ✅ 1. استخرج البريد من التوكن
+        String email = userDetails.getUsername();
+
+        // ✅ 2. التحقق من المستخدم
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("المستخدم غير موجود"));
 
-        // ✅ 2. الحد الأقصى لعدد الملفات
+        // ✅ 2. التحقق من الحد الأقصى
         long fileCount = medicalFileRepository.countByOwner(user);
         if (fileCount >= MAX_FILES_PER_USER) {
             throw new BadRequestException("وصلت الحد الأقصى لعدد الملفات المسموح به (8 ملفات)");
         }
 
-        // ✅ 3. التحقق من وجود الفئة
+        // ✅ 3. التحقق من الفئة
         if (requestDTO.getCategory() == null || requestDTO.getCategory().isBlank()) {
             throw new BadRequestException("يجب تحديد فئة الملف");
         }
 
-        // ✅ 4. التحقق من وجود نوع فرعي
+        // ✅ 4. التحقق من النوع الفرعي
         if (requestDTO.getSubCategory() == null || requestDTO.getSubCategory().isBlank()) {
             throw new BadRequestException("يجب تحديد نوع الملف الفرعي (مثل نوع الأشعة أو التحليل)");
         }
 
-        // ✅ 5. التحقق من الملف نفسه
+        // ✅ 5. التحقق من اسم العرض
+        if (requestDTO.getDisplayName() == null || requestDTO.getDisplayName().isBlank()) {
+            throw new BadRequestException("يجب إدخال اسم الملف (مثل أشعة مقطعية على الصدر)");
+        }
+
+        // ✅ 6. التحقق من الملف نفسه
         if (file.isEmpty()) {
             throw new BadRequestException("الملف فارغ");
         }
 
-        // ✅ 6. التحقق من الامتداد
+        // ✅ 7. التحقق من الامتداد
         String originalFilename = file.getOriginalFilename();
         String extension = getFileExtension(originalFilename);
-
         if (!ALLOWED_EXTENSIONS.contains(extension.toLowerCase())) {
             throw new BadRequestException("نوع الملف غير مسموح به. الأنواع المسموحة: " +
                     String.join(", ", ALLOWED_EXTENSIONS));
         }
 
-        // ✅ 7. توليد اسم ملف فريد
-        String uniqueFilename = generateUniqueFilename(originalFilename);
-
-        // ✅ 8. رفع الملف إلى Cloudinary
-        String fileUrl;
-        try {
-            fileUrl = fileUploadService.uploadFile(file);
-        } catch (IOException e) {
-            throw new FileStorageException("فشل رفع الملف", e);
-        }
-
-        // ✅ 9. تحويل الفئة من النص إلى Enum (يدعم العربي والإنجليزي)
+        // ✅ 8. التحقق من الفئة وتحويلها إلى Enum (قبل رفع الملف)
         FileCategory categoryEnum = FileCategory.fromArabic(requestDTO.getCategory())
                 .orElseGet(() -> {
                     try {
@@ -102,25 +99,31 @@ public class MedicalFileService {
                     }
                 });
 
-        // ✅ 10. إنشاء كائن الملف
+        // ✅ 9. التحقق من النوع الفرعي المتوافق مع الفئة
+        String subKey = categoryEnum.resolveSubcategoryKey(requestDTO.getSubCategory());
+
+        // ✅ 10. بعد ما نتأكد من كل حاجة، نرفع الملف
+        String fileUrl;
+        try {
+            fileUrl = fileUploadService.uploadFile(file);
+        } catch (IOException e) {
+            throw new FileStorageException("فشل رفع الملف", e);
+        }
+
+        // ✅ 11. إنشاء كائن الملف
+        String uniqueFilename = generateUniqueFilename(originalFilename);
+
         MedicalFile medicalFile = new MedicalFile();
         medicalFile.setCategory(categoryEnum);
+        medicalFile.setSubCategory(subKey);
         medicalFile.setFileName(uniqueFilename);
         medicalFile.setFileType(extension);
         medicalFile.setOwner(user);
         medicalFile.setUrl(fileUrl);
+        medicalFile.setDisplayName(requestDTO.getDisplayName().trim());
         medicalFile.setUploadedAt(LocalDateTime.now());
 
-        // ✅ 11. تحديد النوع الفرعي بناءً على الفئة المختارة
-        String subKey = categoryEnum.resolveSubcategoryKey(requestDTO.getSubCategory());
-        medicalFile.setSubCategory(subKey);
-
-        if (requestDTO.getDisplayName() == null || requestDTO.getDisplayName().isBlank()) {
-            throw new BadRequestException("يجب إدخال اسم الملف (مثل أشعة مقطعية على الصدر)");
-        }
-        medicalFile.setDisplayName(requestDTO.getDisplayName().trim());
-
-        // ✅ 12. حفظ الملف
+        // ✅ 12. حفظ الملف في قاعدة البيانات
         MedicalFile savedFile = medicalFileRepository.save(medicalFile);
 
         // ✅ 13. إرجاع النتيجة
@@ -132,9 +135,10 @@ public class MedicalFileService {
      * @param userId User ID
      * @return List of MedicalFileResponseDTO
      */
-    public List<MedicalFileResponseDTO> getAllFilesByUser(UUID userId) {
+    public List<MedicalFileResponseDTO> getAllFilesByUser(UserDetails userDetails) {
 
-        List<MedicalFile> files = medicalFileRepository.findByOwnerId(userId);
+        String email = userDetails.getUsername();
+        List<MedicalFile> files = medicalFileRepository.findByOwnerEmail(email);
 
         if (files.isEmpty()) {
             throw new ResourceNotFoundException("لا توجد ملفات خاصة بالمستخدم الحالي");
@@ -150,12 +154,13 @@ public class MedicalFileService {
      * @param fileId File ID
      * @param userId User ID (for authorization)
      */
-    public void deleteFile(UUID fileId, UUID userId) {
+    public void deleteFile(UUID fileId, UserDetails userDetails) {
 
+        String email = userDetails.getUsername();
         MedicalFile file = medicalFileRepository.findById(fileId)
                 .orElseThrow(() -> new ResourceNotFoundException("الملف غير موجود"));
 
-        if (!file.getOwner().getId().equals(userId)) {
+        if (!file.getOwner().getEmail().equalsIgnoreCase(email)) {
             throw new UnauthorizedException("غير مسموح لك حذف الملف");
         }
 
@@ -168,12 +173,13 @@ public class MedicalFileService {
      * @param userId User ID (for authorization)
      * @return MedicalFileResponseDTO
      */
-    public MedicalFileResponseDTO getFileById(UUID fileId, UUID userId) {
+    public MedicalFileResponseDTO getFileById(UUID fileId, UserDetails userDetails) {
 
+        String email = userDetails.getUsername();
         MedicalFile file = medicalFileRepository.findById(fileId)
                 .orElseThrow(() -> new ResourceNotFoundException("الملف غير موجود"));
 
-        if (!file.getOwner().getId().equals(userId)) {
+        if (!file.getOwner().getEmail().equalsIgnoreCase(email)) {
             throw new UnauthorizedException("غير مسموح لك الوصول لهذا الملف");
         }
 

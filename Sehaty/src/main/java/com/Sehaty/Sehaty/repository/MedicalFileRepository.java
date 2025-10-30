@@ -40,4 +40,5 @@ public interface MedicalFileRepository extends JpaRepository<MedicalFile, UUID> 
 
      long countByOwner(User user);
 
+    List<MedicalFile> findByOwnerEmail(String email);
 }

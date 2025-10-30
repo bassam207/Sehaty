@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,47 +23,47 @@ public class MedicalFileController {
 
     private final MedicalFileService medicalFileService;
 
-    @PostMapping("/upload/{userId}")
+    @PostMapping("/upload")
     public ResponseEntity<ApiResponse> uploadFile(
-            @PathVariable UUID userId,
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam("file") MultipartFile file,
             @Valid @ModelAttribute MedicalFileUploadRequestDTO requestDTO) {
 
-        MedicalFileResponseDTO responseDTO = medicalFileService.uploadFile(userId, file, requestDTO);
+        MedicalFileResponseDTO responseDTO = medicalFileService.uploadFile(userDetails,file, requestDTO);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(new ApiResponse(true, "تم رفع الملف بنجاح", responseDTO));
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse> getAllFilesByUser(@PathVariable UUID userId) {
+    @GetMapping("/AllFiles")
+    public ResponseEntity<ApiResponse> getAllFilesByUser(@AuthenticationPrincipal UserDetails userDetails) {
 
-        List<MedicalFileResponseDTO> files = medicalFileService.getAllFilesByUser(userId);
+        List<MedicalFileResponseDTO> files = medicalFileService.getAllFilesByUser(userDetails);
 
         return ResponseEntity.ok(
                 new ApiResponse(true, "تم إرجاع الملفات بنجاح", files)
         );
     }
 
-    @GetMapping("/{fileId}")
+    @GetMapping("/file")
     public ResponseEntity<ApiResponse> getFileById(
             @PathVariable UUID fileId,
-            @RequestParam UUID userId) {
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        MedicalFileResponseDTO file = medicalFileService.getFileById(fileId, userId);
+        MedicalFileResponseDTO file = medicalFileService.getFileById(fileId, userDetails);
 
         return ResponseEntity.ok(
                 new ApiResponse(true, "تم إرجاع الملف بنجاح", file)
         );
     }
 
-    @DeleteMapping("/{fileId}")
+    @DeleteMapping("/deleteFile")
     public ResponseEntity<ApiResponse> deleteFile(
             @PathVariable UUID fileId,
-            @RequestParam UUID userId) {
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        medicalFileService.deleteFile(fileId, userId);
+        medicalFileService.deleteFile(fileId, userDetails);
 
         return ResponseEntity.ok(
                 new ApiResponse(true, "تم حذف الملف بنجاح")

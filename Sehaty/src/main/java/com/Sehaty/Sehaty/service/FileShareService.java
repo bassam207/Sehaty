@@ -71,7 +71,7 @@ public class FileShareService {
 
         SharedRecords sharedRecords = createSharedRecord(user, files, qrCode);
         SharedRecords savedShare = sharedRecordRepository.save(sharedRecords);
-        String qrData = BASE_URL + "/api/share/by-qr?qrCode=" + qrCode;
+        String qrData = BASE_URL + "/share/by-qr?qrCode=" + qrCode;
         sharedRecords.setQrData(qrData);
 
         savedShare = sharedRecordRepository.save(savedShare);
