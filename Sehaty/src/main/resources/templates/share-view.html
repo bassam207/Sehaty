@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صحتي - عرض السجل الطبي</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0891b2 0%, #14b8a6 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        .app-info {
+            flex: 1;
+        }
+
+        .app-name {
+            font-size: 2rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #0891b2 0%, #14b8a6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .app-tagline {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        .patient-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .patient-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .patient-name {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0891b2 0%, #14b8a6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .patient-details h2 {
+            font-size: 1.5rem;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .patient-id {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .timer {
+            background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%);
+            padding: 15px 25px;
+            border-radius: 50px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .timer.warning {
+            background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .download-banner {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .download-banner h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .download-banner p {
+            color: #cbd5e1;
+            margin-bottom: 20px;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .download-btn {
+            background: white;
+            color: #1e293b;
+            padding: 12px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .files-section {
+            margin-bottom: 20px;
+        }
+
+        .category-title {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .category-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .category-icon.xray {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        }
+
+        .category-icon.lab {
+            background: linear-gradient(135deg, #14b8a6 0%, #10b981 100%);
+        }
+
+        .category-icon.prescription {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+
+        .category-info h3 {
+            color: #1e293b;
+            font-size: 1.3rem;
+            margin-bottom: 3px;
+        }
+
+        .file-count {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .file-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .file-card:hover {
+            border-color: #14b8a6;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(20, 184, 166, 0.2);
+        }
+
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .file-type-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .file-type-badge.pdf {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .file-type-badge.image {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .file-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 10px;
+            overflow-wrap: break-word;
+            word-break: break-all;
+            max-width: 100%;
+            display: block;
+        }
+
+        .file-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .view-file-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #0891b2 0%, #14b8a6 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .view-file-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(20, 184, 166, 0.3);
+        }
+
+        .empty-state {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            color: #94a3b8;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .footer {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #14b8a6;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .footer-text {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .patient-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .files-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <img src="/images/seh.jpg" alt="شعار صحتي" class="logo-img">
+        </div>
+        <div class="app-info">
+            <h1 class="app-name">صحتي</h1>
+            <p class="app-tagline">نظام إدارة السجلات الطبية الإلكتروني</p>
+        </div>
+    </div>
+
+    <!-- Patient Info -->
+    <div class="patient-card">
+        <div class="patient-header">
+            <div class="patient-name">
+                <div class="avatar" th:text="${#strings.substring(patientName, 0, 1)}">م</div>
+                <div class="patient-details">
+                    <h2 th:text="${patientName}">اسم المريض</h2>
+                    <p class="patient-id" th:text="'رقم الجلسة: #' + ${qrCode}">رقم الجلسة</p>
+                </div>
+            </div>
+            <div class="timer" th:classappend="${timeRemaining <= 3} ? 'warning' : ''">
+                <span class="timer-icon">⏰</span>
+                <span id="timeRemainingDisplay" th:data-time="${timeRemaining}">
+                        <span th:text="${timeRemaining} + ' دقيقة متبقية'">15 دقيقة متبقية</span>
+                    </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download App Banner -->
+    <div class="download-banner">
+        <h3>📱 ليس لديك التطبيق؟</h3>
+        <p>حمّل تطبيق صحتي الآن واحصل على إدارة كاملة لسجلاتك الطبية</p>
+        <div class="download-buttons">
+            <a href="#" class="download-btn">
+                <span>🍎</span>
+                <span>تحميل من App Store</span>
+            </a>
+            <a href="#" class="download-btn">
+                <span>📲</span>
+                <span>تحميل من Google Play</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- X-Ray Files -->
+
+    <!-- X-Ray Files -->
+    <div class="files-section" th:if="${xrayCount > 0}">
+        <div class="category-title">
+            <div class="category-icon xray">🩻</div>
+            <div class="category-info">
+                <h3>الأشعة</h3>
+                <p class="file-count" th:text="${xrayCount} + ' ملف'">0 ملف</p>
+            </div>
+        </div>
+        <div class="files-grid">
+            <div class="file-card" th:each="file : ${xrayFiles}">
+                <div class="file-header">
+                    <span class="file-type-badge image">صورة</span>
+                </div>
+                <h4 class="file-name" th:text="${file.displayName}">اسم الملف</h4>
+                <div class="file-meta">
+                    <span class="meta-item">📁 <span th:text="${file.subCategory}">نوع</span></span>
+                </div>
+                <a th:if="${file.url != null and !#strings.isEmpty(file.url)}"
+                   th:href="${file.url}" target="_blank" class="view-file-btn">
+                    <span>👁️</span>
+                    <span>عرض الملف</span>
+                </a>
+                <span th:if="${file.url == null or #strings.isEmpty(file.url)}" style="color: #dc2626; font-size: 0.8rem;">لا يوجد رابط للملف</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lab Tests -->
+    <div class="files-section" th:if="${labCount > 0}">
+        <div class="category-title">
+            <div class="category-icon lab">🔬</div>
+            <div class="category-info">
+                <h3>التحاليل الطبية</h3>
+                <p class="file-count" th:text="${labCount} + ' ملف'">0 ملف</p>
+            </div>
+        </div>
+        <div class="files-grid">
+            <div class="file-card" th:each="file : ${labFiles}">
+                <div class="file-header">
+                    <span class="file-type-badge pdf">PDF</span>
+                </div>
+                <h4 class="file-name" th:text="${file.displayName}">اسم الملف</h4>
+                <div class="file-meta">
+                    <span class="meta-item">📁 <span th:text="${file.subCategory}">نوع</span></span>
+                </div>
+                <a th:href="${file.url}" target="_blank" class="view-file-btn">
+                    <span>👁️</span>
+                    <span>عرض الملف</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prescriptions -->
+    <div class="files-section" th:if="${prescriptionCount > 0}">
+        <div class="category-title">
+            <div class="category-icon prescription">💊</div>
+            <div class="category-info">
+                <h3>التقارير والروشتات</h3>
+                <p class="file-count" th:text="${prescriptionCount} + ' ملف'">0 ملف</p>
+            </div>
+        </div>
+        <div class="files-grid">
+            <div class="file-card" th:each="file : ${prescriptionFiles}">
+                <div class="file-header">
+                    <span class="file-type-badge pdf">PDF</span>
+                </div>
+                <h4 class="file-name" th:text="${file.displayName}">اسم الملف</h4>
+                <div class="file-meta">
+                    <span class="meta-item">📁 <span th:text="${file.subCategory}">نوع</span></span>
+                </div>
+                <a th:href="${file.url}" target="_blank" class="view-file-btn">
+                    <span>👁️</span>
+                    <span>عرض الملف</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" th:if="${xrayCount == 0 && labCount == 0 && prescriptionCount == 0}">
+        <div class="empty-state-icon">📭</div>
+        <h3>لا توجد ملفات مشاركة</h3>
+        <p>لم يتم مشاركة أي ملفات في هذه الجلسة</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="security-badge">
+            <span>🔒</span>
+            <span>هذه الجلسة مؤمنة ومشفرة بالكامل</span>
+        </div>
+        <p class="footer-text">© 2025 صحتي - نظام إدارة السجلات الطبية الإلكتروني</p>
+        <p class="footer-text" style="margin-top: 5px; font-size: 0.8rem;">
+            جميع الحقوق محفوظة | سياسة الخصوصية
+        </p>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // Get initial time from Thymeleaf
+    const timeElement = document.getElementById('timeRemainingDisplay');
+    let totalMinutes = parseInt(timeElement.getAttribute('data-time'));
+    let totalSeconds = totalMinutes * 60;
+
+    function updateTimer() {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        timeElement.innerHTML = `${minutes}:${seconds.toString().padStart(2, '0')} دقيقة`;
+
+        const timerDiv = document.querySelector('.timer');
+
+        // Warning at 3 minutes
+        if (totalSeconds <= 180 && !timerDiv.classList.contains('warning')) {
+            timerDiv.classList.add('warning');
+        }
+
+        // Expired
+        if (totalSeconds <= 0) {
+            timeElement.textContent = 'انتهت الصلاحية';
+            alert('انتهت صلاحية الجلسة. سيتم إعادة تحميل الصفحة.');
+            location.reload();
+            return;
+        }
+
+        totalSeconds--;
+    }
+
+    // Update every second
+    setInterval(updateTimer, 1000);
+    /*]]>*/
+</script>
+</body>
+</html>

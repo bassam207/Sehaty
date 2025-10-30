@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خطأ - صحتي</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0891b2 0%, #14b8a6 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .error-container {
+            background: white;
+            border-radius: 30px;
+            padding: 60px 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .error-icon {
+            font-size: 6rem;
+            margin-bottom: 20px;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        h1 {
+            color: #1e293b;
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        .error-message {
+            color: #64748b;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .error-details {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0891b2 0%, #14b8a6 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(20, 184, 166, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="error-container">
+    <div class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+            <rect x="30" y="30" width="140" height="140" rx="30" fill="none" stroke="#164e63" stroke-width="12"/>
+            <path d="M70,70 L70,100 L100,100 L100,130 L70,130 L70,100" fill="none" stroke="#14b8a6" stroke-width="10" stroke-linecap="round"/>
+            <circle cx="80" cy="80" r="8" fill="white"/>
+            <circle cx="80" cy="120" r="8" fill="white"/>
+            <circle cx="110" cy="100" r="8" fill="white"/>
+        </svg>
+    </div>
+
+    <div class="error-icon">❌</div>
+
+    <h1>عذراً، حدث خطأ!</h1>
+
+    <p class="error-message">
+        لم نتمكن من الوصول إلى الجلسة المطلوبة
+    </p>
+
+    <div class="error-details" th:if="${errorMessage}">
+        <span th:text="${errorMessage}">رسالة الخطأ</span>
+    </div>
+
+    <div class="error-details" th:unless="${errorMessage}">
+        قد تكون الجلسة منتهية أو تم إلغاؤها
+    </div>
+
+    <div class="action-buttons">
+        <a href="javascript:history.back()" class="btn btn-secondary">
+            <span>⬅️</span>
+            <span>
