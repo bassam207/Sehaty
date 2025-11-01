@@ -1,6 +1,8 @@
 package com.Sehaty.Sehaty.config;
 
 import com.Sehaty.Sehaty.security.JwtAuthenticationFilter;
+import com.Sehaty.Sehaty.service.LogoutService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +30,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final LogoutService logoutService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -43,13 +46,25 @@ public class SecurityConfig {
 
                 // ✅ Define endpoint permissions
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Public endpoints (register, login)
+                        .requestMatchers("/api/auth/**","share/**", "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html").permitAll() // Public endpoints (register, login)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // For CORS preflight
                         .anyRequest().authenticated() // Everything else requires authentication
                 )
 
+                .logout(logout -> logout
+                        .logoutUrl("/auth/logout")
+                        .addLogoutHandler(logoutService)
+                        .logoutSuccessHandler((req, res, auth) -> {
+                            res.setStatus(HttpServletResponse.SC_OK);
+                        })
+                )
+
+
                 // ✅ Add JWT filter before UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
 
         return http.build();
     }

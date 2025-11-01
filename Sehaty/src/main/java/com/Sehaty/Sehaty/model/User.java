@@ -1,5 +1,6 @@
 package com.Sehaty.Sehaty.model;
 
+import com.Sehaty.Sehaty.shared.Gender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -11,6 +12,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDate;
 import java.util.*;
 
 /**
@@ -49,6 +51,13 @@ public class User implements UserDetails {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<SharedRecords> shares = new ArrayList<>();
+
+    @Column(nullable = false)
+    private LocalDate dateOfBirth;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Gender gender;
 
     // ==============================
     // 👇 UserDetails Implementation

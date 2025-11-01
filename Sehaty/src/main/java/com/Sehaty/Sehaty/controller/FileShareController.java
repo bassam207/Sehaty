@@ -7,6 +7,8 @@ import com.Sehaty.Sehaty.shared.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,10 +28,10 @@ public class FileShareController {
      */
     @PostMapping("/create")
     public ResponseEntity<ApiResponse> createShareSession(
-            @RequestParam UUID userId,
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody List<UUID> fileIds) {
 
-        SharedRecordDTO sharedRecord = fileShareService.createShareSession(userId, fileIds);
+        SharedRecordDTO sharedRecord = fileShareService.createShareSession(userDetails, fileIds);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -66,19 +68,19 @@ public class FileShareController {
     @PutMapping("/revoke/{shareId}")
     public ResponseEntity<ApiResponse> revokeShare(
             @PathVariable UUID shareId,
-            @RequestParam UUID userId) {
+           @AuthenticationPrincipal UserDetails userDetails) {
 
-        SharedRecordDTO sharedRecord = fileShareService.revokeShare(shareId, userId);
+        SharedRecordDTO sharedRecord = fileShareService.revokeShare(shareId, userDetails);
 
         return ResponseEntity.ok(
                 new ApiResponse(true, "تم إنهاء جلسة المشاركة بنجاح", sharedRecord)
         );
     }
 
-    @GetMapping("/sessions/{userId}")
-    public ResponseEntity<ApiResponse> getUserSessions(@PathVariable UUID userId) {
+    @GetMapping("/sessions")
+    public ResponseEntity<ApiResponse> getUserSessions(@AuthenticationPrincipal UserDetails userDetails) {
         Map<String, List<SharedRecordDTO>> sessions =
-                fileShareService.getUserSessions(userId);
+                fileShareService.getUserSessions(userDetails);
 
         return ResponseEntity.ok(
                 new ApiResponse(true, "تم جلب الجلسات بنجاح", sessions)

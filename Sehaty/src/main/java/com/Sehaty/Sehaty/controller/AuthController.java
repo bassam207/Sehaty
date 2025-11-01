@@ -4,6 +4,7 @@ import com.Sehaty.Sehaty.dto.AuthResponseDTO;
 import com.Sehaty.Sehaty.dto.LoginDTO;
 import com.Sehaty.Sehaty.dto.UserRequestDTO;
 import com.Sehaty.Sehaty.dto.UserResponseDTO;
+import com.Sehaty.Sehaty.service.AuthService;
 import com.Sehaty.Sehaty.service.UserService;
 import com.Sehaty.Sehaty.shared.ApiResponse;
 import jakarta.validation.Valid;
@@ -20,12 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserService userService;
+    private final AuthService authService;
 
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@Valid @RequestBody UserRequestDTO request) {
-        AuthResponseDTO response = userService.register(request);
+        AuthResponseDTO response = authService.register(request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(new ApiResponse(true, "تم التسجيل بنجاح", response));
@@ -33,9 +34,14 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> login(@Valid @RequestBody LoginDTO loginDTO) {
-        AuthResponseDTO response = userService.loginUser(loginDTO);
+        AuthResponseDTO response = authService.loginUser(loginDTO);
         return ResponseEntity.ok(
                 new ApiResponse(true, "تم تسجيل الدخول بنجاح", response)
         );
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        return ResponseEntity.ok("Logged out successfully.");
     }
 }
