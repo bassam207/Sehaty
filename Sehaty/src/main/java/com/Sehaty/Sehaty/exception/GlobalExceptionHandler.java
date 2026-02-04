@@ -10,14 +10,25 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
+/**
+ * Global exception handler for the application.
+ * Catches and handles various exceptions, returning standardized error responses.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<String> handleResourceNotFound(NoResourceFoundException ex) {
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    }
     /**
      * Handle Resource Not Found Exception
      */
@@ -140,7 +151,7 @@ public class GlobalExceptionHandler {
 
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.PAYLOAD_TOO_LARGE.value(),
-                String.format("حجم الملف أكبر من المسموح به (الحد الأقصى %s)", maxFileSize),
+                String.format("File size exceeds the allowed limit (Maximum %s)", maxFileSize),
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(error, HttpStatus.PAYLOAD_TOO_LARGE);
@@ -172,7 +183,7 @@ public class GlobalExceptionHandler {
 
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "حدث خطأ غير متوقع في الخادم",
+                "An unexpected error occurred on the server",
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);

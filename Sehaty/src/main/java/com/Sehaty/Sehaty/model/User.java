@@ -1,5 +1,6 @@
 package com.Sehaty.Sehaty.model;
 
+import com.Sehaty.Sehaty.security.AttributeEncryptor;
 import com.Sehaty.Sehaty.shared.Gender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -25,7 +26,9 @@ import java.util.*;
  */
 @Entity
 @Builder
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_user_email", columnList = "email")
+})
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -36,6 +39,7 @@ public class User implements UserDetails {
     private UUID id;
 
     @Column(nullable = false)
+    @Convert(converter = AttributeEncryptor.class)
     private String name;
 
     @Column(nullable = false, unique = true)
@@ -46,10 +50,10 @@ public class User implements UserDetails {
 
     private String profileImageUrl;
 
-    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MedicalFile> files = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SharedRecords> shares = new ArrayList<>();
 
     @Column(nullable = false)
@@ -65,12 +69,12 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList(); // حالياً بدون roles
+        return Collections.emptyList(); // No roles for now
     }
 
     @Override
     public String getUsername() {
-        return email; // نستخدم الإيميل كـ username
+        return email; // Use email as username
     }
 
     @Override

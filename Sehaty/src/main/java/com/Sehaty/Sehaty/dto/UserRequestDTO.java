@@ -4,6 +4,7 @@ package com.Sehaty.Sehaty.dto;
 import com.Sehaty.Sehaty.shared.Gender;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +13,7 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class UserRequestDTO {
 
     /** Full name of the user (patient or doctor). */

@@ -20,6 +20,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.stream.Collectors;
 
+/**
+ * Service class for handling authentication logic.
+ * Includes registration, login, and token management.
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -33,11 +37,14 @@ public class AuthService {
 
     /**
      * Registers a new user.
+     * Validates input, creates a new user entity, and generates an authentication token.
      *
-     * @param request DTO containing new user information
-     * @return DTO containing saved user info (excluding sensitive data)
+     * @param request DTO containing new user information.
+     * @return AuthResponseDTO containing the JWT token and user details.
+     * @throws InvalidEmailException if the email format is invalid.
+     * @throws EmailAlreadyUsedException if the email is already registered.
+     * @throws InvalidPasswordException if the password is too short.
      */
-
     public AuthResponseDTO register(UserRequestDTO request)
     {
         // ✅ Validate email format
@@ -61,6 +68,9 @@ public class AuthService {
 
         // ✅ Map DTO to Entity
         User user = userMapper.convertToUser(request);
+        if (user == null) {
+            throw new NullPointerException("User mapping returned null");
+        }
 
         // ✅ Hash password
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -79,6 +89,15 @@ public class AuthService {
     }
 
 
+    /**
+     * Authenticates a user.
+     * Verifies credentials and generates a new JWT token.
+     *
+     * @param loginDTO DTO containing login credentials.
+     * @return AuthResponseDTO containing the JWT token and user details.
+     * @throws ResourceNotFoundException if the user is not found.
+     * @throws BadRequestException if the password is incorrect.
+     */
     public AuthResponseDTO loginUser(LoginDTO loginDTO)
     {
         // ✅ Check if email exists
@@ -108,10 +127,27 @@ public class AuthService {
                 .build();
     }
 
+    /**
+     * Validates the user's age.
+     * Ensures the user is at least 18 years old and the date is reasonable.
+     *
+     * @param dob Date of birth.
+     * @throws IllegalArgumentException if the age is invalid.
+     */
     public void validateAge(LocalDate dob) {
+
+        // Minimum age = 18 years
         LocalDate minDate = LocalDate.now().minusYears(18);
+
+        // Maximum age = 120 years
+        LocalDate maxDate = LocalDate.now().minusYears(120);
+
         if (dob.isAfter(minDate)) {
             throw new IllegalArgumentException("لازم عمر المستخدم يكون 18 سنة علي الاقل");
+        }
+
+        if (dob.isBefore(maxDate)) {
+            throw new IllegalArgumentException("تاريخ الميلاد غير منطقي");
         }
     }
 

@@ -2,11 +2,17 @@ package com.Sehaty.Sehaty.config;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configuration class for Cloudinary integration.
+ * Sets up the Cloudinary bean for file uploads.
+ */
 @Configuration
+@Slf4j
 public class CloudinaryConfig {
 
     @Value("${cloudinary.cloud-name}")
@@ -18,10 +24,15 @@ public class CloudinaryConfig {
     @Value("${cloudinary.api-secret}")
     private String apiSecret;
 
+    /**
+     * Creates and configures the Cloudinary bean.
+     *
+     * @return Cloudinary instance configured with credentials.
+     */
     @Bean
     public Cloudinary cloudinary()
     {
-        System.out.println("Cloudinary: " + cloudName + " | " + apiKey + " | " + apiSecret);
+        log.info("Configuring Cloudinary with cloud name: {}", cloudName);
         return new Cloudinary(ObjectUtils.asMap(
 
                 "cloud_name",cloudName,
@@ -31,5 +42,3 @@ public class CloudinaryConfig {
     }
 
 }
-
-

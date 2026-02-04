@@ -1,6 +1,7 @@
 package com.Sehaty.Sehaty.service;
 
 
+import com.Sehaty.Sehaty.audit.AuditLog;
 import com.Sehaty.Sehaty.exception.BadRequestException;
 import com.Sehaty.Sehaty.exception.FileStorageException;
 import com.Sehaty.Sehaty.exception.ResourceNotFoundException;
@@ -15,6 +16,8 @@ import com.Sehaty.Sehaty.repository.MedicalFileRepository;
 import com.Sehaty.Sehaty.repository.UserRepository;
 import com.Sehaty.Sehaty.shared.FileCategory;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,8 +29,13 @@ import java.util.List;
 
 import java.util.UUID;
 
+/**
+ * Service for managing medical files.
+ * Handles uploading, retrieving, and deleting files.
+ */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MedicalFileService {
 
     private final MedicalFileRepository medicalFileRepository;
@@ -35,82 +43,73 @@ public class MedicalFileService {
     private final FileUploadService fileUploadService;
     private final MedicalFileMapper medicalFileMapper;
 
-    private static final int MAX_FILES_PER_USER = 10;
-    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
-            "pdf", "jpg", "jpeg", "png", "doc", "docx"
-    );
+    @Value("${sehaty.files.max-per-user}")
+    private int maxFilesPerUser;
+
+    @Value("#{'${sehaty.files.allowed-extensions}'.split(',')}")
+    private List<String> allowedExtensions;
+
     /**
      * Upload medical file
-     * @param userId User ID
+     * @param userDetails User Details
      * @param file MultipartFile
      * @param requestDTO Upload request data
      * @return MedicalFileResponseDTO
      */
+    @AuditLog(action = "UPLOAD_FILE")
     public MedicalFileResponseDTO uploadFile(UserDetails userDetails, MultipartFile file, MedicalFileUploadRequestDTO requestDTO) {
 
-        // ✅ 1. استخرج البريد من التوكن
-        String email = userDetails.getUsername();
+        UUID userId = UUID.fromString(userDetails.getUsername());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // ✅ 2. التحقق من المستخدم
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("المستخدم غير موجود"));
-
-        // ✅ 2. التحقق من الحد الأقصى
         long fileCount = medicalFileRepository.countByOwner(user);
-        if (fileCount >= MAX_FILES_PER_USER) {
-            throw new BadRequestException("وصلت الحد الأقصى لعدد الملفات المسموح به (8 ملفات)");
+        if (fileCount >= maxFilesPerUser) {
+            throw new BadRequestException("Reached the maximum number of allowed files (" + maxFilesPerUser + " files)");
         }
 
-        // ✅ 3. التحقق من الفئة
         if (requestDTO.getCategory() == null || requestDTO.getCategory().isBlank()) {
-            throw new BadRequestException("يجب تحديد فئة الملف");
+            throw new BadRequestException("File category is required");
         }
 
-        // ✅ 4. التحقق من النوع الفرعي
         if (requestDTO.getSubCategory() == null || requestDTO.getSubCategory().isBlank()) {
-            throw new BadRequestException("يجب تحديد نوع الملف الفرعي (مثل نوع الأشعة أو التحليل)");
+            throw new BadRequestException("File subcategory is required (e.g., X-ray or Lab Test)");
         }
 
-        // ✅ 5. التحقق من اسم العرض
         if (requestDTO.getDisplayName() == null || requestDTO.getDisplayName().isBlank()) {
-            throw new BadRequestException("يجب إدخال اسم الملف (مثل أشعة مقطعية على الصدر)");
+            throw new BadRequestException("Display name is required (e.g., Chest CT Scan)");
         }
 
-        // ✅ 6. التحقق من الملف نفسه
         if (file.isEmpty()) {
-            throw new BadRequestException("الملف فارغ");
+            throw new BadRequestException("File is empty");
         }
 
-        // ✅ 7. التحقق من الامتداد
         String originalFilename = file.getOriginalFilename();
         String extension = getFileExtension(originalFilename);
-        if (!ALLOWED_EXTENSIONS.contains(extension.toLowerCase())) {
-            throw new BadRequestException("نوع الملف غير مسموح به. الأنواع المسموحة: " +
-                    String.join(", ", ALLOWED_EXTENSIONS));
+        if (!allowedExtensions.contains(extension.toLowerCase())) {
+            throw new BadRequestException("File type not allowed. Allowed types: " +
+                    String.join(", ", allowedExtensions));
         }
 
-        // ✅ 8. التحقق من الفئة وتحويلها إلى Enum (قبل رفع الملف)
         FileCategory categoryEnum = FileCategory.fromArabic(requestDTO.getCategory())
                 .orElseGet(() -> {
                     try {
                         return FileCategory.valueOf(requestDTO.getCategory().toUpperCase());
                     } catch (Exception e) {
-                        throw new BadRequestException("الفئة غير معروفة: " + requestDTO.getCategory());
+                        throw new BadRequestException("Unknown category: " + requestDTO.getCategory());
                     }
                 });
 
-        // ✅ 9. التحقق من النوع الفرعي المتوافق مع الفئة
         String subKey = categoryEnum.resolveSubcategoryKey(requestDTO.getSubCategory());
 
-        // ✅ 10. بعد ما نتأكد من كل حاجة، نرفع الملف
         String fileUrl;
         try {
             fileUrl = fileUploadService.uploadFile(file);
         } catch (IOException e) {
-            throw new FileStorageException("فشل رفع الملف", e);
+            log.error("Failed to upload file for user {}", userId, e);
+            throw new FileStorageException("Failed to upload file", e);
         }
 
-        // ✅ 11. إنشاء كائن الملف
         String uniqueFilename = generateUniqueFilename(originalFilename);
 
         MedicalFile medicalFile = new MedicalFile();
@@ -123,27 +122,25 @@ public class MedicalFileService {
         medicalFile.setDisplayName(requestDTO.getDisplayName().trim());
         medicalFile.setUploadedAt(LocalDateTime.now());
 
-        // ✅ 12. حفظ الملف في قاعدة البيانات
         MedicalFile savedFile = medicalFileRepository.save(medicalFile);
+        log.info("User {} uploaded file {} with category {}", userId, savedFile.getId(), categoryEnum);
 
-        // ✅ 13. إرجاع النتيجة
         return medicalFileMapper.toMedicalFileResponseDTO(savedFile);
     }
 
     /**
      * Get all files by user
-     * @param userId User ID
+     * @param userDetails User Details
      * @return List of MedicalFileResponseDTO
      */
+    @AuditLog(action = "GET_ALL_FILES")
     public List<MedicalFileResponseDTO> getAllFilesByUser(UserDetails userDetails) {
-
-        String email = userDetails.getUsername();
-        List<MedicalFile> files = medicalFileRepository.findByOwnerEmail(email);
-
+        UUID userId = UUID.fromString(userDetails.getUsername());
+        List<MedicalFile> files = medicalFileRepository.findByOwnerId(userId);
         if (files.isEmpty()) {
             throw new ResourceNotFoundException("لا توجد ملفات خاصة بالمستخدم الحالي");
         }
-
+        log.debug("Retrieved {} files for user {}", files.size(), userId);
         return files.stream()
                 .map(medicalFileMapper::toMedicalFileResponseDTO)
                 .toList();
@@ -152,37 +149,41 @@ public class MedicalFileService {
     /**
      * Delete file
      * @param fileId File ID
-     * @param userId User ID (for authorization)
+     * @param userDetails User Details (for authorization)
      */
+    @AuditLog(action = "DELETE_FILE")
     public void deleteFile(UUID fileId, UserDetails userDetails) {
-
-        String email = userDetails.getUsername();
+        UUID userId = UUID.fromString(userDetails.getUsername());
         MedicalFile file = medicalFileRepository.findById(fileId)
                 .orElseThrow(() -> new ResourceNotFoundException("الملف غير موجود"));
 
-        if (!file.getOwner().getEmail().equalsIgnoreCase(email)) {
+        if (!file.getOwner().getId().equals(userId)) {
+            log.error("User {} attempted to delete file {} owned by {}", userId, fileId, file.getOwner().getId());
             throw new UnauthorizedException("غير مسموح لك حذف الملف");
         }
 
         medicalFileRepository.delete(file);
+        log.info("User {} deleted file {}", userId, fileId);
     }
 
     /**
      * Get file by ID
      * @param fileId File ID
-     * @param userId User ID (for authorization)
+     * @param userDetails User Details (for authorization)
      * @return MedicalFileResponseDTO
      */
+    @AuditLog(action = "GET_FILE_BY_ID")
     public MedicalFileResponseDTO getFileById(UUID fileId, UserDetails userDetails) {
-
-        String email = userDetails.getUsername();
+        UUID userId = UUID.fromString(userDetails.getUsername());
         MedicalFile file = medicalFileRepository.findById(fileId)
                 .orElseThrow(() -> new ResourceNotFoundException("الملف غير موجود"));
 
-        if (!file.getOwner().getEmail().equalsIgnoreCase(email)) {
+        if (!file.getOwner().getId().equals(userId)) {
+            log.error("User {} attempted to access file {} owned by {}", userId, fileId, file.getOwner().getId());
             throw new UnauthorizedException("غير مسموح لك الوصول لهذا الملف");
         }
 
+        log.debug("User {} accessed file {}", userId, fileId);
         return medicalFileMapper.toMedicalFileResponseDTO(file);
     }
 
@@ -204,14 +205,11 @@ public class MedicalFileService {
         String filenameWithoutExt = originalFilename.substring(0,
                 originalFilename.lastIndexOf("."));
 
-        // Clean filename (remove special characters)
         filenameWithoutExt = filenameWithoutExt.replaceAll("[^a-zA-Z0-9-_]", "_");
 
-        // Add timestamp and UUID for uniqueness
         String timestamp = String.valueOf(System.currentTimeMillis());
         String uniqueId = UUID.randomUUID().toString().substring(0, 8);
 
         return filenameWithoutExt + "_" + timestamp + "_" + uniqueId + "." + extension;
     }
-
 }

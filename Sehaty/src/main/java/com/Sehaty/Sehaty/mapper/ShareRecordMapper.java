@@ -10,9 +10,19 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+/**
+ * Mapper class for converting SharedRecords entities to DTOs.
+ */
 @Component
 public class ShareRecordMapper {
 
+    /**
+     * Converts a SharedRecords entity to a SharedRecordDTO.
+     * Calculates time remaining until expiration and maps shared files.
+     *
+     * @param savedShare The SharedRecords entity.
+     * @return The SharedRecordDTO.
+     */
     public SharedRecordDTO toDTO(SharedRecords savedShare)
     {
         SharedRecordDTO responseDTO = new SharedRecordDTO();

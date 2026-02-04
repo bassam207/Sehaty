@@ -3,6 +3,10 @@ package com.Sehaty.Sehaty.shared;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Enumeration representing categories of medical files.
+ * Includes mapping for Arabic display names and subcategories.
+ */
 public enum FileCategory {
 
     RADIOLOGY("أشعة", Map.ofEntries(
@@ -50,7 +54,10 @@ public enum FileCategory {
     }
 
     /**
-     * يحاول يطابق النص العربي مع أي فئة معروفة
+     * Tries to match an Arabic string to a known FileCategory.
+     *
+     * @param input The Arabic string input.
+     * @return Optional containing the matching FileCategory, or empty if not found.
      */
     public static Optional<FileCategory> fromArabic(String input) {
         if (input == null || input.isBlank()) return Optional.empty();
@@ -60,7 +67,7 @@ public enum FileCategory {
             if (normalizeArabic(cat.arabicName).equals(normalized))
                 return Optional.of(cat);
 
-            // لو النص فيه كلمة زي "اشعه" ضمنه
+            // Check if the input contains a keyword like "اشعه"
             if (normalized.contains(normalizeArabic(cat.arabicName)))
                 return Optional.of(cat);
         }
@@ -71,6 +78,12 @@ public enum FileCategory {
     }
 
 
+    /**
+     * Resolves a subcategory key from an input string.
+     *
+     * @param input The subcategory input string.
+     * @return The resolved subcategory key, or "OTHER" if not found.
+     */
     public String resolveSubcategoryKey(String input) {
         if (input == null || input.isBlank()) return "OTHER";
         String normalized = normalizeArabic(input);
@@ -84,7 +97,11 @@ public enum FileCategory {
     }
 
     /**
-     * توحيد النص العربي قبل المقارنة
+     * Normalizes Arabic text for comparison.
+     * Removes diacritics and unifies alef forms.
+     *
+     * @param text The text to normalize.
+     * @return The normalized text.
      */
     private static String normalizeArabic(String text) {
         return text.toLowerCase()
