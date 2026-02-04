@@ -66,7 +66,7 @@ To run this project locally, you will need the following installed:
 
 1.  **Clone the Repository**
     ```bash
-    git clone https://github.com/your-username/Sehaty.git
+    git clone https://github.com/bassam207/Sehaty.git
     cd Sehaty
     ```
 
