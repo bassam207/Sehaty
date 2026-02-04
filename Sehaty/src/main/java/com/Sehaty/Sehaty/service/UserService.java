@@ -1,5 +1,6 @@
 package com.Sehaty.Sehaty.service;
 
+import com.Sehaty.Sehaty.audit.AuditLog;
 import com.Sehaty.Sehaty.dto.*;
 import com.Sehaty.Sehaty.exception.*;
 import com.Sehaty.Sehaty.security.JwtUtil;
@@ -11,6 +12,8 @@ import com.Sehaty.Sehaty.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -44,23 +47,30 @@ public class UserService {
     private final JwtUtil jwtUtil;
 
 
-
-
+    /**
+     * Updates user information.
+     * Allows updating name, email, and password.
+     *
+     * @param authentication The current authentication object.
+     * @param updateUserDTO DTO containing updated user information.
+     * @return UserResponseDTO with the updated user details.
+     * @throws ResourceNotFoundException if the user is not found.
+     * @throws EmailAlreadyUsedException if the new email is already in use.
+     * @throws InvalidPasswordException if the new password is invalid.
+     */
+    @CacheEvict(value = "users", key = "#authentication.name")
+    @AuditLog(action = "UPDATE_USER")
     public UserResponseDTO updateUser(Authentication authentication, UpdateUserDTO updateUserDTO)
     {
-        // ✅ 1. Extract the email (username) from the JWT
-        String email = authentication.getName();
+        String userId = authentication.getName();
 
-        // ✅ 2. Fetch the user by email
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("المستخدم غير موجود"));
 
-        // ✅ 3. Update name if provided
         if (updateUserDTO.getName() != null) {
             user.setName(updateUserDTO.getName());
         }
 
-        // ✅ 4. Update email if provided and not already used
         if (updateUserDTO.getEmail() != null && !updateUserDTO.getEmail().isBlank()) {
             if (!updateUserDTO.getEmail().equals(user.getEmail()) && userRepository.existsByEmail(updateUserDTO.getEmail())) {
                 throw new EmailAlreadyUsedException("الايميل مستخدم بالفعل");
@@ -68,7 +78,6 @@ public class UserService {
             user.setEmail(updateUserDTO.getEmail());
         }
 
-        // ✅ 5. Update password if provided and valid
         if (updateUserDTO.getPassword() != null && !updateUserDTO.getPassword().isBlank()) {
             if (updateUserDTO.getPassword().length() < 8) {
                 throw new InvalidPasswordException("كلمة السر لازم تكون 8 حروف على الأقل");
@@ -76,30 +85,29 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(updateUserDTO.getPassword()));
         }
 
-        // ✅ 6. Save updates
         User updatedUser = userRepository.save(user);
 
-        // ✅ 7. Convert to DTO and return
         return userMapper.convertTOUserResponseDTO(updatedUser);
     }
 
 
+    /**
+     * Retrieves the current authenticated user's details.
+     *
+     * @param authentication The current authentication object.
+     * @return UserResponseDTO containing user details.
+     * @throws ResourceNotFoundException if the user is not found.
+     */
+    @Cacheable(value = "users", key = "#authentication.name")
+    @AuditLog(action = "GET_CURRENT_USER")
     public UserResponseDTO getCurrentUser(Authentication authentication)
     {
-        String email = authentication.getName(); // email stored in token
-        User user = userRepository.findByEmail(email)
+        String userId = authentication.getName();
+
+        User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("المستخدم غير موجود"));
         return userMapper.convertTOUserResponseDTO(user);
     }
-
-
-
-
-
-
-
-
-
 
 
 }

@@ -19,7 +19,10 @@ import java.util.UUID;
  * allowing secure and time-limited access to medical data.
  */
 @Entity
-@Table(name = "shared_records")
+@Table(name = "shared_records", indexes = {
+        @Index(name = "idx_sharedrecords_qrcode", columnList = "qrCode"),
+        @Index(name = "idx_sharedrecords_user_id", columnList = "user_id")
+})
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -34,6 +37,7 @@ public class SharedRecords {
     /**
      * The QR code (or its string representation) that allows others to access this share.
      */
+    @Column(unique = true)
     private String qrCode;
 
     private String qrData;

@@ -17,12 +17,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Mapper class for converting between User entities and DTOs.
+ */
 @Component
 @RequiredArgsConstructor
 public class UserMapper {
 
     private final MedicalFileMapper medicalFileMapper;
 
+    /**
+     * Converts a UserRequestDTO to a User entity.
+     *
+     * @param userRequestDTO The DTO containing user registration data.
+     * @return The User entity.
+     */
     public User convertToUser(UserRequestDTO userRequestDTO) {
         User user = new User();
 
@@ -36,6 +45,13 @@ public class UserMapper {
     }
 
 
+    /**
+     * Converts a User entity to a UserResponseDTO.
+     * Includes calculating age and mapping associated medical files.
+     *
+     * @param user The User entity.
+     * @return The UserResponseDTO.
+     */
     public UserResponseDTO convertTOUserResponseDTO(User user) {
         UserResponseDTO userResponseDTO = new UserResponseDTO();
 
@@ -64,19 +80,4 @@ public class UserMapper {
         return userResponseDTO;
 
     }
-
-/**    private static MedicalFileUploadRequestDTO mapMedicalFile(MedicalFile file) {
- return Optional.ofNullable(file)
- .map(f -> {
- MedicalFileUploadRequestDTO dto = new MedicalFileUploadRequestDTO();
- dto.setFileName(Optional.ofNullable(f.getFileName()).orElse("Unnamed File"));
- dto.setCategory(Optional.ofNullable(f.getCategory()).orElse("Unnamed category"));
- dto.setSubCategory(Optional.ofNullable(f.getSubCategory()).orElse("Unnamed subcategory"));
- dto.setUploadedAt(f.getUploadedAt());
- dto.setUrl(Optional.ofNullable(f.getUrl()).orElse(""));
- return dto;
- })
- .orElseGet(MedicalFileUploadRequestDTO::new); // return empty dto if file is null
- }*/
 }
-

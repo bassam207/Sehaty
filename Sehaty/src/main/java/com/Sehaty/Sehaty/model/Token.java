@@ -13,6 +13,9 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "tokens", indexes = {
+        @Index(name = "idx_token_token", columnList = "token")
+})
 public class Token {
 
     @Id

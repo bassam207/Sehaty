@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" xmlns:th="http://www.thymeleaf.org">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,6 +39,7 @@
             align-items: center;
             justify-content: center;
         }
+
         .logo-img {
             width: 60px;
             height: 60px;
@@ -359,6 +360,24 @@
             font-size: 0.9rem;
         }
 
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -381,7 +400,7 @@
     <!-- Header -->
     <div class="header">
         <div class="logo">
-            <img src="/images/seh.jpg" alt="شعار صحتي" class="logo-img">
+            <img src="/seh.jpg" alt="شعار صحتي" class="logo-img">
         </div>
         <div class="app-info">
             <h1 class="app-name">صحتي</h1>
@@ -389,177 +408,258 @@
         </div>
     </div>
 
-    <!-- Patient Info -->
-    <div class="patient-card">
-        <div class="patient-header">
-            <div class="patient-name">
-                <div class="avatar" th:text="${#strings.substring(patientName, 0, 1)}">م</div>
-                <div class="patient-details">
-                    <h2 th:text="${patientName}">اسم المريض</h2>
-                    <p class="patient-id" th:text="'رقم الجلسة: #' + ${qrCode}">رقم الجلسة</p>
-                </div>
-            </div>
-            <div class="timer" th:classappend="${timeRemaining <= 3} ? 'warning' : ''">
-                <span class="timer-icon">⏰</span>
-                <span id="timeRemainingDisplay" th:data-time="${timeRemaining}">
-                        <span th:text="${timeRemaining} + ' دقيقة متبقية'">15 دقيقة متبقية</span>
-                    </span>
-            </div>
-        </div>
+    <!-- Loading State -->
+    <div id="loading" class="loading-spinner">
+        <span>⏳ جاري تحميل السجلات الطبية...</span>
     </div>
 
-    <!-- Download App Banner -->
-    <div class="download-banner">
-        <h3>📱 ليس لديك التطبيق؟</h3>
-        <p>حمّل تطبيق صحتي الآن واحصل على إدارة كاملة لسجلاتك الطبية</p>
-        <div class="download-buttons">
-            <a href="#" class="download-btn">
-                <span>🍎</span>
-                <span>تحميل من App Store</span>
-            </a>
-            <a href="#" class="download-btn">
-                <span>📲</span>
-                <span>تحميل من Google Play</span>
-            </a>
-        </div>
+    <!-- Error State -->
+    <div id="error" class="error-message" style="display: none;">
+        <p id="errorMessage">حدث خطأ أثناء تحميل البيانات</p>
     </div>
 
-    <!-- X-Ray Files -->
-
-    <!-- X-Ray Files -->
-    <div class="files-section" th:if="${xrayCount > 0}">
-        <div class="category-title">
-            <div class="category-icon xray">🩻</div>
-            <div class="category-info">
-                <h3>الأشعة</h3>
-                <p class="file-count" th:text="${xrayCount} + ' ملف'">0 ملف</p>
+    <!-- Content Container (Hidden by default) -->
+    <div id="content" style="display: none;">
+        <!-- Patient Info -->
+        <div class="patient-card">
+            <div class="patient-header">
+                <div class="patient-name">
+                    <div class="avatar" id="avatar">م</div>
+                    <div class="patient-details">
+                        <h2 id="patientName">اسم المريض</h2>
+                        <p class="patient-id" id="sessionId">رقم الجلسة</p>
+                    </div>
+                </div>
+                <div class="timer" id="timer">
+                    <span class="timer-icon">⏰</span>
+                    <span id="timeRemainingDisplay">--:-- دقيقة</span>
+                </div>
             </div>
         </div>
-        <div class="files-grid">
-            <div class="file-card" th:each="file : ${xrayFiles}">
-                <div class="file-header">
-                    <span class="file-type-badge image">صورة</span>
-                </div>
-                <h4 class="file-name" th:text="${file.displayName}">اسم الملف</h4>
-                <div class="file-meta">
-                    <span class="meta-item">📁 <span th:text="${file.subCategory}">نوع</span></span>
-                </div>
-                <a th:if="${file.url != null and !#strings.isEmpty(file.url)}"
-                   th:href="${file.url}" target="_blank" class="view-file-btn">
-                    <span>👁️</span>
-                    <span>عرض الملف</span>
+
+        <!-- Download App Banner -->
+        <div class="download-banner">
+            <h3>📱 ليس لديك التطبيق؟</h3>
+            <p>حمّل تطبيق صحتي الآن واحصل على إدارة كاملة لسجلاتك الطبية</p>
+            <div class="download-buttons">
+                <a href="#" class="download-btn">
+                    <span>🍎</span>
+                    <span>تحميل من App Store</span>
                 </a>
-                <span th:if="${file.url == null or #strings.isEmpty(file.url)}" style="color: #dc2626; font-size: 0.8rem;">لا يوجد رابط للملف</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Lab Tests -->
-    <div class="files-section" th:if="${labCount > 0}">
-        <div class="category-title">
-            <div class="category-icon lab">🔬</div>
-            <div class="category-info">
-                <h3>التحاليل الطبية</h3>
-                <p class="file-count" th:text="${labCount} + ' ملف'">0 ملف</p>
-            </div>
-        </div>
-        <div class="files-grid">
-            <div class="file-card" th:each="file : ${labFiles}">
-                <div class="file-header">
-                    <span class="file-type-badge pdf">PDF</span>
-                </div>
-                <h4 class="file-name" th:text="${file.displayName}">اسم الملف</h4>
-                <div class="file-meta">
-                    <span class="meta-item">📁 <span th:text="${file.subCategory}">نوع</span></span>
-                </div>
-                <a th:href="${file.url}" target="_blank" class="view-file-btn">
-                    <span>👁️</span>
-                    <span>عرض الملف</span>
+                <a href="#" class="download-btn">
+                    <span>📲</span>
+                    <span>تحميل من Google Play</span>
                 </a>
             </div>
         </div>
-    </div>
 
-    <!-- Prescriptions -->
-    <div class="files-section" th:if="${prescriptionCount > 0}">
-        <div class="category-title">
-            <div class="category-icon prescription">💊</div>
-            <div class="category-info">
-                <h3>التقارير والروشتات</h3>
-                <p class="file-count" th:text="${prescriptionCount} + ' ملف'">0 ملف</p>
+        <!-- Files Container -->
+        <div id="filesContainer"></div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="security-badge">
+                <span>🔒</span>
+                <span>هذه الجلسة مؤمنة ومشفرة بالكامل</span>
             </div>
+            <p class="footer-text">© 2025 صحتي - نظام إدارة السجلات الطبية الإلكتروني</p>
+            <p class="footer-text" style="margin-top: 5px; font-size: 0.8rem;">
+                جميع الحقوق محفوظة | سياسة الخصوصية
+            </p>
         </div>
-        <div class="files-grid">
-            <div class="file-card" th:each="file : ${prescriptionFiles}">
-                <div class="file-header">
-                    <span class="file-type-badge pdf">PDF</span>
-                </div>
-                <h4 class="file-name" th:text="${file.displayName}">اسم الملف</h4>
-                <div class="file-meta">
-                    <span class="meta-item">📁 <span th:text="${file.subCategory}">نوع</span></span>
-                </div>
-                <a th:href="${file.url}" target="_blank" class="view-file-btn">
-                    <span>👁️</span>
-                    <span>عرض الملف</span>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Empty State -->
-    <div class="empty-state" th:if="${xrayCount == 0 && labCount == 0 && prescriptionCount == 0}">
-        <div class="empty-state-icon">📭</div>
-        <h3>لا توجد ملفات مشاركة</h3>
-        <p>لم يتم مشاركة أي ملفات في هذه الجلسة</p>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-        <div class="security-badge">
-            <span>🔒</span>
-            <span>هذه الجلسة مؤمنة ومشفرة بالكامل</span>
-        </div>
-        <p class="footer-text">© 2025 صحتي - نظام إدارة السجلات الطبية الإلكتروني</p>
-        <p class="footer-text" style="margin-top: 5px; font-size: 0.8rem;">
-            جميع الحقوق محفوظة | سياسة الخصوصية
-        </p>
     </div>
 </div>
 
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    // Get initial time from Thymeleaf
-    const timeElement = document.getElementById('timeRemainingDisplay');
-    let totalMinutes = parseInt(timeElement.getAttribute('data-time'));
-    let totalSeconds = totalMinutes * 60;
+<script>
+    // Get UUID from URL path (e.g., /share/uuid)
+    const pathParts = window.location.pathname.split('/');
+    const uuid = pathParts[pathParts.length - 1];
 
-    function updateTimer() {
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
 
-        timeElement.innerHTML = `${minutes}:${seconds.toString().padStart(2, '0')} دقيقة`;
+    const API_BASE_URL = `${window.location.protocol}//${window.location.host}/api/share`;
 
-        const timerDiv = document.querySelector('.timer');
+    let totalSeconds = 0;
+    let timerInterval = null;
 
-        // Warning at 3 minutes
-        if (totalSeconds <= 180 && !timerDiv.classList.contains('warning')) {
-            timerDiv.classList.add('warning');
+    // Fetch shared data
+    async function loadSharedData() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/access-by-qr?code=${uuid}`);
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                displayData(result.data);
+            } else {
+                showError('حدث خطأ: ' + (result.message || 'فشل تحميل البيانات'));
+            }
+        } catch (error) {
+            console.error('Error loading data:', error);
+            showError('فشل الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
+        }
+    }
+
+    // Display the data
+    function displayData(data) {
+        // Hide loading, show content
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+
+        // Patient Info
+        const patientName = data.userName || 'مريض';
+        document.getElementById('patientName').textContent = patientName;
+        document.getElementById('avatar').textContent = patientName.charAt(0);
+        document.getElementById('sessionId').textContent = 'رقم الجلسة: #' + data.qrCode;
+
+        // Timer
+        if (data.timeRemaining) {
+            totalSeconds = data.timeRemaining * 60;
+            startTimer();
         }
 
-        // Expired
-        if (totalSeconds <= 0) {
-            timeElement.textContent = 'انتهت الصلاحية';
-            alert('انتهت صلاحية الجلسة. سيتم إعادة تحميل الصفحة.');
-            location.reload();
+        // Files
+        renderFiles(data.sharedFiles || []);
+    }
+
+    // Render files by category
+    function renderFiles(files) {
+        const container = document.getElementById('filesContainer');
+        container.innerHTML = '';
+
+        if (files.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>لا توجد ملفات مشاركة</h3>
+                    <p>لم يتم مشاركة أي ملفات في هذه الجلسة</p>
+                </div>
+            `;
             return;
         }
 
-        totalSeconds--;
+        // Categorize files
+        const categories = {
+            xray: files.filter(f => f.category === 'XRAY' || f.category === 'أشعة'),
+            lab: files.filter(f => f.category === 'LAB' || f.category === 'تحاليل'),
+            prescription: files.filter(f => f.category === 'PRESCRIPTION' || f.category === 'روشتة' || f.category === 'تقارير')
+        };
+
+        // Render X-Ray
+        if (categories.xray.length > 0) {
+            container.innerHTML += createCategorySection('🩻', 'الأشعة', 'xray', categories.xray);
+        }
+
+        // Render Lab
+        if (categories.lab.length > 0) {
+            container.innerHTML += createCategorySection('🔬', 'التحاليل الطبية', 'lab', categories.lab);
+        }
+
+        // Render Prescription
+        if (categories.prescription.length > 0) {
+            container.innerHTML += createCategorySection('💊', 'التقارير والروشتات', 'prescription', categories.prescription);
+        }
+
+        // Other files
+        const otherFiles = files.filter(f =>
+            !categories.xray.includes(f) &&
+            !categories.lab.includes(f) &&
+            !categories.prescription.includes(f)
+        );
+
+        if (otherFiles.length > 0) {
+            container.innerHTML += createCategorySection('📄', 'ملفات أخرى', 'prescription', otherFiles);
+        }
     }
 
-    // Update every second
-    setInterval(updateTimer, 1000);
-    /*]]>*/
+    // Create category section HTML
+    function createCategorySection(icon, title, iconClass, files) {
+        const fileCards = files.map(file => createFileCard(file)).join('');
+        return `
+            <div class="files-section">
+                <div class="category-title">
+                    <div class="category-icon ${iconClass}">${icon}</div>
+                    <div class="category-info">
+                        <h3>${title}</h3>
+                        <p class="file-count">${files.length} ملف</p>
+                    </div>
+                </div>
+                <div class="files-grid">
+                    ${fileCards}
+                </div>
+            </div>
+        `;
+    }
+
+    // Create file card HTML
+    function createFileCard(file) {
+        const fileName = file.displayName || file.fileName || 'ملف غير مسمى';
+        const fileUrl = file.url || file.fileUrl;
+        const fileExtension = fileName.split('.').pop().toLowerCase();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
+        const isPdf = fileExtension === 'pdf';
+        const badgeClass = isImage ? 'image' : (isPdf ? 'pdf' : '');
+        const badgeText = isImage ? 'صورة' : (isPdf ? 'PDF' : 'ملف');
+
+        return `
+            <div class="file-card">
+                <div class="file-header">
+                    ${badgeClass ? `<span class="file-type-badge ${badgeClass}">${badgeText}</span>` : ''}
+                </div>
+                <h4 class="file-name">${fileName}</h4>
+                <div class="file-meta">
+                    <span class="meta-item">📁 <span>${file.subCategory || file.fileType || 'غير مصنف'}</span></span>
+                </div>
+                ${fileUrl ?
+            `<a href="${fileUrl}" target="_blank" class="view-file-btn">
+                        <span>👁️</span>
+                        <span>عرض الملف</span>
+                    </a>` :
+            `<span style="color: #dc2626; font-size: 0.8rem; display: block; text-align: center; padding: 12px;">لا يوجد رابط للملف</span>`
+        }
+            </div>
+        `;
+    }
+
+    // Timer functionality
+    function startTimer() {
+        const timerDiv = document.getElementById('timer');
+        const timeDisplay = document.getElementById('timeRemainingDisplay');
+
+        function updateTimer() {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            timeDisplay.innerHTML = `${minutes}:${seconds.toString().padStart(2, '0')} دقيقة`;
+
+            // Warning at 3 minutes
+            if (totalSeconds <= 180 && !timerDiv.classList.contains('warning')) {
+                timerDiv.classList.add('warning');
+            }
+
+            // Expired
+            if (totalSeconds <= 0) {
+                timeDisplay.textContent = 'انتهت الصلاحية';
+                clearInterval(timerInterval);
+                alert('انتهت صلاحية الجلسة. سيتم إعادة تحميل الصفحة.');
+                location.reload();
+                return;
+            }
+
+            totalSeconds--;
+        }
+
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    // Show error message
+    function showError(message) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('errorMessage').textContent = message;
+    }
+
+    // Load data on page load
+    document.addEventListener('DOMContentLoaded', loadSharedData);
 </script>
 </body>
 </html>

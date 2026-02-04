@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+/**
+ * Controller for handling user-related endpoints.
+ * Includes retrieving and updating user information.
+ */
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -25,7 +29,10 @@ public class UserController {
 
 
     /**
-     * Get current authenticated user (using JWT)
+     * Get current authenticated user (using JWT).
+     *
+     * @param authentication The current authentication object.
+     * @return ApiResponse containing the user's details.
      */
     @GetMapping("/me")
     public ResponseEntity<ApiResponse> getCurrentUser(Authentication authentication) {
@@ -36,7 +43,11 @@ public class UserController {
     }
 
     /**
-     * Update current authenticated user (using JWT)
+     * Update current authenticated user (using JWT).
+     *
+     * @param authentication The current authentication object.
+     * @param updateUserDTO DTO containing the fields to update.
+     * @return ApiResponse containing the updated user's details.
      */
     @PatchMapping("/update")
     public ResponseEntity<ApiResponse> updateUser(

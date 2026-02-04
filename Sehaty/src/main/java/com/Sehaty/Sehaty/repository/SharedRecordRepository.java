@@ -29,8 +29,20 @@ public interface SharedRecordRepository extends JpaRepository<SharedRecords, UUI
     List<SharedRecords> findByUser(User user);
 
 
+    /**
+     * Finds a shared record by its QR code.
+     *
+     * @param qr The QR code string.
+     * @return Optional<SharedRecords> containing the found record or empty if not found.
+     */
     Optional<SharedRecords> findByQrCode(String qr);
 
+    /**
+     * Deletes old, ended (expired or revoked) share sessions.
+     *
+     * @param cutoffTime The time before which to delete sessions.
+     * @return The number of deleted sessions.
+     */
     @Modifying
     @Query("""
         DELETE FROM SharedRecords s

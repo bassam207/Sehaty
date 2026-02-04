@@ -36,9 +36,27 @@ public interface MedicalFileRepository extends JpaRepository<MedicalFile, UUID> 
 
     List<MedicalFile> findByCategory(String category);
 
+    /**
+     * Returns all medical files for a user by their ID.
+     *
+     * @param userId The ID of the user.
+     * @return List of medical files.
+     */
      List<MedicalFile> findByOwnerId(UUID userId) ;
 
+     /**
+      * Counts the number of files owned by a user.
+      *
+      * @param user The user.
+      * @return The number of files.
+      */
      long countByOwner(User user);
 
+     /**
+      * Returns all medical files for a user by their email.
+      *
+      * @param email The email of the user.
+      * @return List of medical files.
+      */
     List<MedicalFile> findByOwnerEmail(String email);
 }

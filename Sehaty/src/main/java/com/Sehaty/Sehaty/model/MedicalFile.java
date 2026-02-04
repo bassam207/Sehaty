@@ -1,5 +1,6 @@
 package com.Sehaty.Sehaty.model;
 
+import com.Sehaty.Sehaty.security.AttributeEncryptor;
 import com.Sehaty.Sehaty.shared.FileCategory;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -18,7 +19,9 @@ import java.util.UUID;
  * Files can later be shared with others through the ShareRecord entity.
  */
 @Entity
-@Table(name = "medical_files")
+@Table(name = "medical_files", indexes = {
+        @Index(name = "idx_medicalfile_owner_id", columnList = "user_id")
+})
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -41,6 +44,7 @@ public class MedicalFile {
      */
     private String fileType;
 
+    @Convert(converter = AttributeEncryptor.class)
     private String displayName;
 
 
@@ -53,6 +57,7 @@ public class MedicalFile {
     /**
      * Specific subcategory, e.g. "CT", "MRI", "Blood", "Urine".
      */
+    @Convert(converter = AttributeEncryptor.class)
     private String subCategory;
 
     /**
